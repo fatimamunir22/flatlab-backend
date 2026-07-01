@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 
 function send_welcome_email(string $to_email): void {
+    $unsub_url = _unsub_url($to_email);
     _brevo_send(
         to:      $to_email,
         subject: 'Welcome to FlatLab — You\'re in!',
@@ -9,11 +10,14 @@ function send_welcome_email(string $to_email): void {
             '<p style="margin:0 0 16px;font-size:16px;color:#555555;line-height:1.7;">
                 Thanks for subscribing! You\'ll hear from us with a mix of company updates, industry tips and insights, product and service announcements, and exclusive offers.
             </p>
-            <p style="margin:0;font-size:16px;color:#555555;line-height:1.7;">
+            <p style="margin:0 0 32px;font-size:16px;color:#555555;line-height:1.7;">
                 Stay tuned — great things are coming.
+            </p>
+            <p style="margin:0;font-size:12px;color:#aaaaaa;text-align:center;">
+                Don\'t want these emails? <a href="' . $unsub_url . '" style="color:#aaaaaa;">Unsubscribe</a>
             </p>'
         ),
-        text:    "Welcome to the FlatLab Newsletter!\n\nThanks for subscribing. You'll hear from us with company updates, industry tips and insights, product and service announcements, and exclusive offers.\n\nStay tuned — great things are coming.\n\n© FlatLab · " . SITE_URL
+        text: "Welcome to the FlatLab Newsletter!\n\nThanks for subscribing. You'll hear from us with company updates, industry tips and insights, product and service announcements, and exclusive offers.\n\nStay tuned — great things are coming.\n\nUnsubscribe: $unsub_url\n\n© FlatLab · " . SITE_URL
     );
 }
 
@@ -39,6 +43,11 @@ function send_contact_notification(string $name, string $email, ?string $phone, 
 }
 
 // --- Shared helpers ---
+
+function _unsub_url(string $email): string {
+    $token = hash_hmac('sha256', $email, UNSUB_SECRET);
+    return BACKEND_URL . '/unsubscribe.php?email=' . urlencode($email) . '&token=' . $token;
+}
 
 function _brevo_send(string $to, string $subject, string $html, string $text, array $reply_to = []): void {
     $payload = [
