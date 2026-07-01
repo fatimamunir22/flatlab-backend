@@ -7,6 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST')    { http_response_code(405); exit; }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/mailer.php';
 
 $name    = input('name',    true);
 $email   = input('email',   false) ?? input('mail', true);   // index.html uses "mail"
@@ -40,6 +41,7 @@ try {
         ':created_at' => date('Y-m-d H:i:s'),
     ]);
 
+    send_contact_notification($name, $email, $phone, $subject, $message);
     json_response(true, "Thank you, {$name}! Your message has been sent. We'll be in touch soon.");
 } catch (Exception $e) {
     json_response(false, 'Something went wrong. Please try again later.');
