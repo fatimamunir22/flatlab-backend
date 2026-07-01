@@ -2,12 +2,27 @@
 require_once __DIR__ . '/config.php';
 
 function send_welcome_email(string $to_email): void {
-    $subject = 'Welcome to FlatLab — You\'re in!';
-    $headers  = "From: " . SENDER_NAME . " <" . SENDER_EMAIL . ">\r\n";
-    $headers .= "Reply-To: " . SENDER_EMAIL . "\r\n";
-    $headers .= "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    mail($to_email, $subject, _welcome_html(), $headers);
+    $payload = [
+        'sender'      => ['name' => SENDER_NAME, 'email' => SENDER_EMAIL],
+        'to'          => [['email' => $to_email]],
+        'subject'     => 'Welcome to FlatLab — You\'re in!',
+        'htmlContent' => _welcome_html(),
+        'textContent' => _welcome_text(),
+    ];
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => [
+            'accept: application/json',
+            'api-key: ' . BREVO_API_KEY,
+            'content-type: application/json',
+        ],
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
 }
 
 function _welcome_html(): string {
