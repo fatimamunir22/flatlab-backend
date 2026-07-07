@@ -9,6 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST')    { http_response_code(405); exit; }
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mailer.php';
 
+// Honeypot - bots fill every field, real users never see this one.
+if (is_spam()) {
+    json_response(true, "You're subscribed! Thanks for joining.");
+}
+
 // Accept both "email" and "EMAIL" (Brevo/SIB legacy field name)
 $email = input('email') ?? input('EMAIL');
 $email = $email ? strtolower(trim($email)) : null;

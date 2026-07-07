@@ -9,6 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST')    { http_response_code(405); exit; }
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mailer.php';
 
+// Honeypot - bots fill every field, real users never see this one.
+if (is_spam()) {
+    json_response(true, "Thank you! Your message has been sent. We'll be in touch soon.");
+}
+
 $name    = input('name',    true);
 $email   = input('email',   false) ?? input('mail', true);   // index.html uses "mail"
 $phone   = input('phone');
@@ -24,6 +29,10 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+
+if (rate_limited('contact_messages', $ip)) {
+    json_response(false, 'Too many messages sent recently. Please try again later.');
+}
 
 try {
     $db = get_db();

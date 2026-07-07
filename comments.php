@@ -32,6 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // ── POST — submit a new comment ─────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Honeypot - bots fill every field, real users never see this one.
+    if (is_spam()) {
+        json_response(true, 'Your comment has been posted!');
+    }
+
     $post_id  = input('post_id') ?? 'blog-details';
     $name     = input('name',    true);
     $email    = input('email',   true);
@@ -47,6 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+
+    if (rate_limited('blog_comments', $ip)) {
+        json_response(false, 'Too many comments posted recently. Please try again later.');
+    }
 
     try {
         $db = get_db();

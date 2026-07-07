@@ -77,3 +77,19 @@ function input(string $key, bool $required = false): ?string {
     if ($required && $val === '') return null;
     return $val === '' ? null : $val;
 }
+
+/** True if the hidden honeypot field was filled in - real users never see or fill it. */
+function is_spam(): bool {
+    return input('website') !== null;
+}
+
+/** True if this IP has submitted to $table more than $max times in the last $minutes. */
+function rate_limited(string $table, ?string $ip, int $max = 5, int $minutes = 10): bool {
+    if (!$ip) return false;
+    $stmt = get_db()->prepare("
+        SELECT COUNT(*) AS c FROM {$table}
+        WHERE ip_address = :ip AND created_at >= datetime('now', :window)
+    ");
+    $stmt->execute([':ip' => $ip, ':window' => "-{$minutes} minutes"]);
+    return (int) $stmt->fetch()['c'] >= $max;
+}
