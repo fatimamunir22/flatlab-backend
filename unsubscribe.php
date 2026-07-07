@@ -6,6 +6,7 @@ $email = isset($_GET['email']) ? strtolower(trim($_GET['email'])) : '';
 $token = $_GET['token'] ?? '';
 
 function valid_token(string $email, string $token): bool {
+    if (UNSUB_SECRET === '') return false;
     return hash_equals(hash_hmac('sha256', $email, UNSUB_SECRET), $token);
 }
 

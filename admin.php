@@ -1,13 +1,12 @@
 <?php
-// Basic protection — change this password
-define('ADMIN_PASS', 'flatlab2024');
+define('ADMIN_PASS', getenv('ADMIN_PASS') ?: '');
 
 session_start();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    if ($_POST['password'] === ADMIN_PASS) {
+    if (ADMIN_PASS !== '' && hash_equals(ADMIN_PASS, $_POST['password'])) {
         $_SESSION['admin'] = true;
     } else {
-        $error = 'Wrong password.';
+        $error = ADMIN_PASS === '' ? 'Admin password is not configured on the server.' : 'Wrong password.';
     }
 }
 if (isset($_GET['logout'])) { session_destroy(); header('Location: admin.php'); exit; }
