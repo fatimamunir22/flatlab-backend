@@ -1,5 +1,14 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/config.php';
+
+// Brevo has no built-in signature - authenticate via a secret query param
+// configured on the webhook URL in Brevo's dashboard, e.g.
+// https://.../webhook.php?secret=...
+if (WEBHOOK_SECRET === '' || !hash_equals(WEBHOOK_SECRET, $_GET['secret'] ?? '')) {
+    http_response_code(401);
+    exit;
+}
 
 $events = json_decode(file_get_contents('php://input'), true);
 if (!$events) { http_response_code(400); exit; }
