@@ -1,9 +1,25 @@
 <?php
 define('ADMIN_PASS', getenv('ADMIN_PASS') ?: '');
 
+session_set_cookie_params([
+    'httponly' => true,
+    'secure'   => true,
+    'samesite' => 'Strict',
+]);
 session_start();
+
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
+function csrf_ok(): bool {
+    return hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    if (ADMIN_PASS !== '' && hash_equals(ADMIN_PASS, $_POST['password'])) {
+    if (!csrf_ok()) {
+        $error = 'Session expired, please try again.';
+    } elseif (ADMIN_PASS !== '' && hash_equals(ADMIN_PASS, $_POST['password'])) {
         $_SESSION['admin'] = true;
     } else {
         $error = ADMIN_PASS === '' ? 'Admin password is not configured on the server.' : 'Wrong password.';
@@ -19,6 +35,7 @@ button{width:100%;padding:10px;background:#111;color:#fff;border:none;border-rad
 .err{color:red;font-size:13px;margin-bottom:8px}</style></head><body>
 <form method="POST"><h2>Admin</h2>
 <?php if (!empty($error)) echo "<p class='err'>$error</p>"; ?>
+<input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
 <input type="password" name="password" placeholder="Password" autofocus>
 <button type="submit">Login</button></form></body></html>
 <?php exit; }
@@ -31,7 +48,7 @@ $tab = $_GET['tab'] ?? 'newsletter';
 // Handle delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'], $_POST['delete_table'])) {
     $allowed = ['newsletter_subscribers', 'contact_messages', 'blog_comments'];
-    if (in_array($_POST['delete_table'], $allowed)) {
+    if (csrf_ok() && in_array($_POST['delete_table'], $allowed)) {
         $db->prepare("DELETE FROM {$_POST['delete_table']} WHERE id = ?")->execute([(int)$_POST['delete_id']]);
     }
     header("Location: admin.php?tab=$tab"); exit;
@@ -86,6 +103,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafafa}
         <?php foreach ($row as $val) echo '<td>' . htmlspecialchars((string)$val) . '</td>'; ?>
         <td>
           <form method="POST" onsubmit="return confirm('Delete this record?')">
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
             <input type="hidden" name="delete_id" value="<?= (int)$row['id'] ?>">
             <input type="hidden" name="delete_table" value="<?= htmlspecialchars($current['table']) ?>">
             <button class="btn-del" type="submit">Delete</button>
