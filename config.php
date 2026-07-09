@@ -6,3 +6,4 @@ define('SITE_URL',      getenv('SITE_URL')      ?: 'https://flatlabs.infinityfre
 define('BACKEND_URL',   getenv('BACKEND_URL')   ?: 'https://flatlab-backend-production.up.railway.app');
 define('UNSUB_SECRET',  getenv('UNSUB_SECRET')  ?: '');
 define('WEBHOOK_SECRET', getenv('WEBHOOK_SECRET') ?: '');
+define('TURNSTILE_SECRET', getenv('TURNSTILE_SECRET') ?: '');
