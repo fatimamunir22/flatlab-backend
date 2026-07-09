@@ -6,6 +6,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/config.php';
 
 // ── GET — fetch approved comments for a post ────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -42,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = input('email',   true);
     $message  = input('message', true);
     $reply_to = input('reply_to');
+    $turnstileToken = input('cf-turnstile-response');
 
     if (!$name || !$email || !$message) {
         json_response(false, 'Please fill in all required fields.');
@@ -52,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+
+    if (!verify_turnstile($turnstileToken, $ip)) {
+        json_response(false, 'Please complete the CAPTCHA.');
+    }
 
     if (rate_limited('blog_comments', $ip)) {
         json_response(false, 'Too many comments posted recently. Please try again later.');
