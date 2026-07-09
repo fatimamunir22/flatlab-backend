@@ -19,6 +19,7 @@ $email   = input('email',   false) ?? input('mail', true);   // index.html uses 
 $phone   = input('phone');
 $subject = input('subject');
 $message = input('message', true);
+$turnstileToken = input('cf-turnstile-response');
 
 if (!$name || !$email || !$message) {
     json_response(false, 'Please fill in all required fields.');
@@ -29,6 +30,10 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+
+if (!verify_turnstile($turnstileToken, $ip)) {
+    json_response(false, 'Please complete the CAPTCHA.');
+}
 
 if (rate_limited('contact_messages', $ip)) {
     json_response(false, 'Too many messages sent recently. Please try again later.');
