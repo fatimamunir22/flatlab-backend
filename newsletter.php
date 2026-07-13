@@ -17,7 +17,6 @@ if (is_spam()) {
 // Accept both "email" and "EMAIL" (Brevo/SIB legacy field name)
 $email = input('email') ?? input('EMAIL');
 $email = $email ? strtolower(trim($email)) : null;
-$turnstileToken = input('cf-turnstile-response');
 
 if (!$email) {
     json_response(false, 'Please enter your email address.');
@@ -25,12 +24,6 @@ if (!$email) {
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     json_response(false, 'Please enter a valid email address.');
-}
-
-$ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
-
-if (!verify_turnstile($turnstileToken, $ip)) {
-    json_response(false, 'Please complete the CAPTCHA.');
 }
 
 try {
