@@ -93,31 +93,3 @@ function rate_limited(string $table, ?string $ip, int $max = 5, int $minutes = 1
     $stmt->execute([':ip' => $ip, ':window' => "-{$minutes} minutes"]);
     return (int) $stmt->fetch()['c'] >= $max;
 }
-
-/** True if the Cloudflare Turnstile token is valid for this request. Fails closed. */
-function verify_turnstile(?string $token, ?string $ip): bool {
-    if (!$token) return false;
-
-    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
-    curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => http_build_query([
-            'secret'   => TURNSTILE_SECRET,
-            'response' => $token,
-            'remoteip' => $ip ?? '',
-        ]),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 5,
-    ]);
-    $response = curl_exec($ch);
-    $err      = curl_error($ch);
-    curl_close($ch);
-
-    if ($err) {
-        error_log('[turnstile] verify request failed — ' . $err);
-        return false;
-    }
-
-    $result = json_decode((string) $response, true);
-    return (bool) ($result['success'] ?? false);
-}
